@@ -63,7 +63,7 @@ const authorize = jwtExpressPolicies({
 // Create policies.
 const stuffPolicy = {
 
-  // Any user can retrieve stuff.
+  // Any authenticated user can retrieve stuff.
   canRetrieve: function(req) {
     return req.currentUser;
   },
