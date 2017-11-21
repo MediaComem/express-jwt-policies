@@ -84,6 +84,11 @@ router.get('/protected/stuff',
 router.post('/protected/stuff',
   authorize(stuffPolicy.canCreate),
   function(req, res, next) { /* create implementation */ });
+
+// Handle authentication/authorization errors.
+router.use((err, req, res, next) => {
+  res.status(err.status || 500).send(err.message);
+});
 ```
 
 ### Authentication only

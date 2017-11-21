@@ -25,41 +25,6 @@ const jwt = require('express-jwt');
 // * `authenticationRequired` (boolean) - If true, successful authentication is always required.
 //   This option is not set by default. Successful authentication is required by default when calling
 //   the `authenticate` function, but not the `authorize` function (see their respective documentation).
-//
-//     const express = require('express');
-//     const jwtExpressPolicies = require('jwt-express-policies');
-//
-//     const auth = jwtExpressPolicies({
-//
-//       authenticatedResourceLoader: function(req, res, next) {
-//         new User().where({ id: req.jwtToken.sub }).then(user => {
-//           req.currentUser = user;
-//           next();
-//         }).catch(next);
-//       },
-//
-//       jwtSecret: 'changeme'
-//     });
-//
-//     const stuffPolicy = {
-//       canRetrieve: function(req) {
-//         return req.currentUser;
-//       },
-//
-//       canCreate: function(req) {
-//         return req.currentUser && req.currentUser.hasRole('admin');
-//       }
-//     };
-//
-//     const router = express.Router();
-//
-//     router.get('/protected/stuff',
-//       auth.authorize(stuffPolicy.canRetrieve),
-//       function(req, res, next) { /* retrieve implementation */ });
-//
-//     router.post('/protected/stuff',
-//       auth.authorize(stuffPolicy.canCreate),
-//       function(req, res, next) { /* create implementation */ });
 module.exports = function(options) {
   if (!options) {
     throw new Error('Middleware options are required');
