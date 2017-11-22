@@ -23,8 +23,8 @@ const jwt = require('express-jwt');
 //   your application.
 //
 // * `authenticationRequired` (boolean) - If true, successful authentication is always required.
-//   This option is not set by default. Successful authentication is required by default when calling
-//   the `authenticate` function, but not the `authorize` function (see their respective documentation).
+//   Otherwise, an unauthenticated request will not cause an error. It is true by default. It can be
+//   set here at the module level, or overridden at every authentication or authorization call.
 module.exports = function(options) {
   if (!options) {
     throw new Error('Middleware options are required');
@@ -36,7 +36,7 @@ module.exports = function(options) {
   }
 
   const authenticationErrorHandler = options.authenticationErrorHandler;
-  const authenticationRequired = options.authenticationRequired !== undefined ? !!options.authenticationRequired : undefined;
+  const authenticationRequired = options.authenticationRequired !== undefined ? !!options.authenticationRequired : true;
 
   const jwtSecret = options.jwtSecret;
   if (!jwtSecret) {
@@ -63,7 +63,7 @@ module.exports = function(options) {
   //   be passed through the middleware chain if no valid JWT is found in the Authorization header. If
   //   false, an unauthenticated request will not cause an error, but the authenticated resource loader
   //   will not be called. This defaults to the value of the `authenticationRequired` option provided
-  //   when configuring this module, or to true if there was none.
+  //   when configuring this module (true by default).
   //
   // The entire options object (including any custom option you might add) is attached to the request
   // as `req.authOptions`.
@@ -72,15 +72,15 @@ module.exports = function(options) {
       options = {};
     }
 
-    // Require a JWT by default, unless specified otherwise in the function's or module's options.
-    let jwtRequired = true;
+    // Require a JWT if specified in the function's or module's options.
+    let jwtRequired = authenticationRequired;
     if (options.authenticationRequired !== undefined) {
       jwtRequired = !!options.authenticationRequired;
-    } else if (authenticationRequired !== undefined) {
-      jwtRequired = authenticationRequired;
     }
 
     let chain = compose()
+      // Enrich the request with the authentication options.
+      .use(enrichRequest(options))
       // Parse the JWT bearer token, if any.
       .use(validateJwt(jwtRequired))
       // Add the 401 status to the JWT error, if any.
@@ -88,7 +88,7 @@ module.exports = function(options) {
       // Run the provided function to load the authenticated resource.
       .use((req, res, next) => {
         if (req.jwtToken) {
-          authenticatedResourceLoader(enrichRequest(req, options), res, next);
+          authenticatedResourceLoader(req, res, next);
         } else {
           next();
         }
@@ -96,7 +96,7 @@ module.exports = function(options) {
 
     // Plug in the provided authentication error handler, if any.
     if (authenticationErrorHandler) {
-      chain = chain.use((err, req, res, next) => authenticationErrorHandler(err, enrichRequest(req, options), res, next));
+      chain = chain.use((err, req, res, next) => authenticationErrorHandler(err, req, res, next));
     }
 
     return chain;
@@ -119,7 +119,7 @@ module.exports = function(options) {
   //
   // * `authenticate` (boolean) - Whether to perform authentication before authorization. Defaults to true.
   // * `authenticationRequired` (boolean) - Whether successful authentication is required before performing
-  //   authorization with the policy function. Defaults to false.
+  //   authorization with the policy function. Defaults to true.
   //
   // The entire options object (including any custom option you might add) is attached to the request
   // as `req.authOptions`. It is also passed to the authentication function.
@@ -130,21 +130,20 @@ module.exports = function(options) {
       options = {};
     }
 
-    const performAuthentication = options.authenticate === undefined || options.authenticate;
-    if (options.authenticationRequired === undefined) {
-      options.authenticationRequired = false;
-    }
-
     let chain = compose();
 
     // Perform authentication (if enabled).
+    const performAuthentication = options.authenticate === undefined || options.authenticate;
     if (performAuthentication) {
       chain = chain.use(authenticate(options));
     }
 
+    // Enrich the request with the authorization options (overwrites the authentication options).
+    chain = chain.use(enrichRequest(options));
+
     // Perform authorization by calling the policy function.
     chain = chain.use(function(req, res, next) {
-      Promise.resolve().then(() => policy(enrichRequest(req, options))).then(authorized => {
+      Promise.resolve(req).then(policy).then(authorized => {
         if (!authorized) {
           throw authError(403, 'You are not authorized to access this resource.');
         }
@@ -153,7 +152,7 @@ module.exports = function(options) {
 
     // Plug in in the provided authorization error handler, if any.
     if (authorizationErrorHandler) {
-      chain = chain.use((err, req, res, next) => authorizationErrorHandler(err, enrichRequest(req, options), res, next));
+      chain = chain.use((err, req, res, next) => authorizationErrorHandler(err, req, res, next));
     }
 
     return chain;
@@ -172,9 +171,11 @@ module.exports = function(options) {
     next(err);
   }
 
-  function enrichRequest(req, options) {
-    req.authOptions = options;
-    return req;
+  function enrichRequest(options) {
+    return function(req, res, next) {
+      req.authOptions = options;
+      next();
+    };
   }
 
   function authError(status, message) {
