@@ -192,7 +192,7 @@ These options can be passed when calling the module's `authenticate` function:
 * `authenticationRequired` (boolean) - Whether successful authentication is
   required. If true, an error will be passed through the middleware chain if no
   valid JWT is found in the Authorization header. If false, an unauthenticated
-  request will not cause an error, but the authenticated resource loader will
+  request will not cause an error, and the authenticated resource loader will
   not be called. This defaults to the value of the `authenticationRequired`
   option provided when configuring the module (true by default).
 
@@ -207,8 +207,9 @@ also the function returned by configuring the module):
 * `authenticate` (boolean) - Whether to perform authentication before
   authorization. Defaults to true.
 * `authenticationRequired` (boolean) - Whether successful authentication is
-  required before performing authorization with the policy function. Defaults
-  to true.
+  required before performing authorization with the policy function. This
+  defaults to the value of the `authenticationRequired` option provided when
+  configuring the module (true by default).
 
 The entire options object (including any custom option you might add) is
 attached to the request as `req.authOptions`.
