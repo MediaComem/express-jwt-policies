@@ -3,6 +3,7 @@
 Lightweight [JWT][jwt] authentication & authorization middleware for [Express][express].
 
 [![npm version](https://badge.fury.io/js/express-jwt-policies.svg)](https://badge.fury.io/js/express-jwt-policies)
+[![Dependency Status](https://gemnasium.com/badges/github.com/MediaComem/express-jwt-policies.svg)](https://gemnasium.com/github.com/MediaComem/express-jwt-policies)
 [![Build Status](https://travis-ci.org/MediaComem/express-jwt-policies.svg?branch=master)](https://travis-ci.org/MediaComem/express-jwt-policies)
 [![Coverage Status](https://coveralls.io/repos/github/MediaComem/express-jwt-policies/badge.svg?branch=master)](https://coveralls.io/github/MediaComem/express-jwt-policies?branch=master)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.txt)
